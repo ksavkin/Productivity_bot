@@ -8,7 +8,7 @@ bot = telebot.TeleBot("5796025327:AAGmNucofDgGzNLKwvdoOndVaufaIxX3vvY")
 count_button = 0
 list_tasks = [] # задачи на день
 flag = False # флаг, показывающий назвал ли пользователь свои задачи
-
+string_name_tasks = ""
 
 class Task:
     def __init__(self, name_of_task, importance, urgency, duration):
@@ -18,7 +18,7 @@ class Task:
         self.duration = duration
 
 class TimeTable:
-    def __init__(self, start_time, finish_time, list_tasks):
+    def __init__(self, start_time=None, finish_time=None, list_tasks=None):
         self.start_time = start_time
         self.finish_time = finish_time
         self.list_tasks = list_tasks
@@ -33,8 +33,22 @@ class TimeTable:
     def add_task(self, name_of_task, importance, urgency, duration):
         task = Task(name_of_task, importance, urgency, duration)
         self.list_tasks.append(task)
-        
 
+time_table = TimeTable()
+
+
+def buttons_func(message):
+    global string_name_tasks
+    global time_table 
+    # обработка кнопок
+    if message.text == "Вывести мои задачи":
+        bot.send_message(message.from_user.id, "задачи: " + string_name_tasks)
+    elif message.text == "Измнеить список задач":
+        bot.send_message(message.from_user.id, "пошел нахер пиши изначально правильно")
+    elif message.text == "Очистить список задач":
+        time_table.list_tasks = []
+        bot.send_message(message.from_user.id, "готово")
+        bot.send_message(message.from_user.id, "задачи: " + string_name_tasks)
 
 # защита от лохов
 @bot.message_handler(content_types=['audio', 'document', 'sticker', 'video', 'voice', 'contact', 'first_name', 'last_name'
@@ -48,6 +62,15 @@ def fefefe(message):
 # начальная фразочка
 @bot.message_handler(commands=['start'])
 def start(message):
+    # создание кнопок
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    btn1 = types.KeyboardButton("Вывести мои задачи")
+    btn2 = types.KeyboardButton("Измнеить список задач")
+    btn3 = types.KeyboardButton("Очистить список задач")
+    markup.add(btn1, btn2, btn3)
+    bot.send_message(message.chat.id, text="Теперь можно использовать кнопки для хз чего".format(message.from_user), reply_markup=markup)
+    bot.register_next_step_handler(message, buttons_func)
+
     global list_tasks
     global count_button
     list_tasks = []
@@ -88,24 +111,32 @@ def callback_worker(call):
 
 @bot.message_handler(content_types=['text'])
 def time_function(message):
-    global flag
-    global count_button
-    global list_tasks
-    global time_table
-    bot.send_message(message.from_user.id, 'введите список задач в формате: название задачи срочность(от 1 до 10) (важность(от 1 до 10) продолжительность(в минутах) пример: поесть 10 8 15')
-    if flag and count_button == 1:
-        count_button += 1
-        sp = message.text.split(";") # разбираемся где начальное и конечное время
-        start_time = sp[0]
-        finish_time = sp[1]
-    time_table = TimeTable(start_time, finish_time, list_tasks)
-    print(time_table.start_time, time_table.finish_time, time_table.list_tasks)
-    bot.register_next_step_handler(message, tasks_function)
+    if message.text == "Вывести мои задачи" or message.text == "Измнеить список задач" or message.text == "Очистить список задач":
+        buttons_func(message)
+    else:
+        global flag
+        global count_button
+        global list_tasks
+        global time_table
+        global start_time
+        global finish_time
+        bot.send_message(message.from_user.id, 'введите список задач в формате: название задачи срочность(от 1 до 10) (важность(от 1 до 10) продолжительность(в минутах) пример: поесть 10 8 15')
+        if flag and count_button == 1:
+            count_button += 1
+            sp = message.text.split(";") # разбираемся где начальное и конечное время
+            start_time = sp[0]
+            finish_time = sp[1]
+        time_table = TimeTable(start_time, finish_time, list_tasks)
+        print(time_table.start_time, time_table.finish_time, time_table.list_tasks)
+        bot.register_next_step_handler(message, tasks_function)
     
 
 def tasks_function(message):
+    if message.text == "Вывести мои задачи" or message.text == "Измнеить список задач" or message.text == "Очистить список задач":
+        buttons_func(message)
     global list_tasks
     global time_table
+    global string_name_tasks
     if ";" in message.text: # тупая проверка присутствует ли больше 1 задачи
         message_new = message.text.split(";")
         for i in message_new:
@@ -138,18 +169,11 @@ def tasks_function(message):
     for i in list_name_tasks:
         string_name_tasks = string_name_tasks + " " + str(i) 
     string_name_tasks = string_name_tasks[1:]
-    bot.send_message(message.from_user.id, "вы добsавили следующие задачи: " + string_name_tasks)
+    bot.send_message(message.from_user.id, "вы добавили следующие задачи: " + string_name_tasks)
 
     
-'''
-    if flag and count_button == 2:
-        sp = message.text.split(" ")  # начинаем разбираться где название задачи/важность/срочность/длительность
-        name_of_task = sp[0]
-        urgency = sp[1]
-        importance = sp[2]
-        duration = sp[3]
-    task = Task(name_of_task, importance, urgency, duration)
-    time_table.list_tasks = list_tasks
-    print(task.name_of_task, task.importance, task.urgency, task.duration)'''
+
+
+
     
 bot.polling()
