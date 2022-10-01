@@ -122,6 +122,8 @@ def time_function(message):
 
     if message.text == "Вывести мои задачи" or message.text == "Измнеить список задач" or message.text == "Очистить список задач":
         buttons_func(message)
+    if message.text == "/start":
+        start(message)
     else:
         count += 1
         global flag
@@ -132,17 +134,27 @@ def time_function(message):
         global finish_time
 
         try:
-            for i in message.text.split('; '):
-                time.strptime(i, '%H:%M')
-                count_button += 1
-                sp = message.text.split(";") # разбираемся где начальное и конечное время
-                start_time = sp[0]
-                finish_time = sp[1]
-            time_table = TimeTable(start_time, finish_time, list_tasks)
-            print(time_table.start_time, time_table.finish_time, time_table.list_tasks)
-            bot.register_next_step_handler(message, tasks_function)
-            bot.send_message(message.from_user.id, 'введите список задач в формате: название задачи срочность(от 1 до 10) (важность(от 1 до 10) продолжительность(в минутах) пример: поесть 10 8 15')
+            t_z = 0
+            t_t = 0
+            for k in message.text:
+                if k == ';':
+                    t_z += 1
+                if k == ':':
+                    t_t += 1
+            if t_z == 1 and len(message.text) <= 12 and len(message.text) >= 10 and t_t == 2:
+                for i in message.text.split('; '):
+                    time.strptime(i, '%H:%M')
+                    count_button += 1
+                    sp = message.text.split(";") # разбираемся где начальное и конечное время
+                    start_time = sp[0]
+                    finish_time = sp[1]
+                time_table = TimeTable(start_time, finish_time, list_tasks)
+                print(time_table.start_time, time_table.finish_time, time_table.list_tasks)
+                bot.register_next_step_handler(message, tasks_function)
+                bot.send_message(message.from_user.id, 'введите список задач в формате: название задачи срочность(от 1 до 10) (важность(от 1 до 10) продолжительность(в минутах) пример: поесть 10 8 15')
 
+            else:
+                bot.send_message(message.from_user.id, 'говно ввел')
         except ValueError:
             bot.send_message(message.from_user.id, 'говно ввел')
 
