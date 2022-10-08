@@ -3,7 +3,6 @@ import telebot
 from telebot import types
 import time
 
-
 bot = telebot.TeleBot("5796025327:AAGmNucofDgGzNLKwvdoOndVaufaIxX3vvY")
 
 count_button = 0
@@ -87,6 +86,9 @@ def start(message):
         # question = 'Ответите на несколько вопросов?'
         question = "Ты готов начать?"
         bot.send_message(message.from_user.id, text=question, reply_markup=keyboard)
+
+    elif message.text == "Вывести мои задачи" or message.text == "Измнеить список задач" or message.text == "Очистить список задач":
+        buttons_func(message)
     # создание кнопок
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     btn1 = types.KeyboardButton("Вывести мои задачи")
@@ -117,31 +119,34 @@ def callback_worker(call):
 @bot.message_handler(content_types=['text'])
 def time_function(message):
     global count
-    if count >= 1:
-        bot.register_next_step_handler(message, tasks_function)
-
     if message.text == "Вывести мои задачи" or message.text == "Измнеить список задач" or message.text == "Очистить список задач":
         buttons_func(message)
-    if message.text == "/start":
-        start(message)
-    else:
-        count += 1
-        global flag
-        global count_button
-        global list_tasks
-        global time_table
-        global start_time
-        global finish_time
+    elif count >= 1:
+        bot.register_next_step_handler(message, tasks_function)
 
-        try:
-            t_z = 0
-            t_t = 0
-            for k in message.text:
-                if k == ';':
-                    t_z += 1
-                if k == ':':
-                    t_t += 1
-            if t_z == 1 and len(message.text) <= 12 and len(message.text) >= 10 and t_t == 2:
+    elif message.text == "/start":
+        start(message)
+
+    else:
+        semicolon = 0
+        colon = 0
+        for elem in message.text:
+            if elem == ';':
+                semicolon += 1
+            if elem == ':':
+                colon += 1
+        if (semicolon == 1) and (colon == 2) and count == 0:
+            semicolon = 0
+            colon = 0
+            count += 1
+            global flag
+            global count_button
+            global list_tasks
+            global time_table
+            global start_time
+            global finish_time
+
+            try:
                 for i in message.text.split('; '):
                     time.strptime(i, '%H:%M')
                     count_button += 1
@@ -150,13 +155,14 @@ def time_function(message):
                     finish_time = sp[1]
                 time_table = TimeTable(start_time, finish_time, list_tasks)
                 print(time_table.start_time, time_table.finish_time, time_table.list_tasks)
+                bot.send_message(message.from_user.id, 'введите список задач в формате: название задачи срочность(от 1 до 10) (важность(от 1 до 10) продолжительность(в минутах) пример: поесть 10 8 15; ауджимания 10 10 90')
                 bot.register_next_step_handler(message, tasks_function)
-                bot.send_message(message.from_user.id, 'введите список задач в формате: название задачи срочность(от 1 до 10) (важность(от 1 до 10) продолжительность(в минутах) пример: поесть 10 8 15')
 
-            else:
+            except ValueError:
                 bot.send_message(message.from_user.id, 'говно ввел')
-        except ValueError:
-            bot.send_message(message.from_user.id, 'говно ввел')
+
+        else:
+            bot.send_message(message.from_user.id, 'я вас не понимаю')
 
 
 @bot.message_handler(content_types=['text'])
@@ -165,13 +171,14 @@ def tasks_function(message):
     global time_table
     global string_name_tasks
     global list_name_tasks
+
     if message.text == "Вывести мои задачи" or message.text == "Измнеить список задач" or message.text == "Очистить список задач":
         buttons_func(message)
 
     else:
         if ";" in message.text:
             # тупая проверка присутствует ли больше 1 задачи + что это не кнопка
-            message_new = message.text.split(";")
+            message_new = message.text.split("; ")
             for i in message_new:
                 sp = i.split(" ") # начинаем разбираться где название задачи/важность/срочность/длительность
                 name_of_task = sp[0]
