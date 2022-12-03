@@ -58,11 +58,13 @@ def buttons_func(message):
         bot.send_message(message.from_user.id, "задачи: " + string_name_tasks)
     elif message.text == "Измнеить список задач":
         bot.send_message(message.from_user.id, "пошел нахер пиши изначально правильно")
-    else: # только если всего 3 кнопки иначе elif
+    elif message.text == "Очистить список задач":
         time_table.list_tasks = []
         string_name_tasks = ""
         bot.send_message(message.from_user.id, "готово")
         bot.send_message(message.from_user.id, "на данный момент у вас нет задач")
+    else: # только если всего 4 кнопки иначе elif. получается else выполняется при нажатии кнопки "составить расписание"
+        bot.send_message(message.from_user.id, "функция находится в разработке")
 
 
 # начальная фразочка
@@ -91,10 +93,12 @@ def start(message):
         buttons_func(message)
     # создание кнопок
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    
     btn1 = types.KeyboardButton("Вывести мои задачи")
     btn2 = types.KeyboardButton("Измнеить список задач")
     btn3 = types.KeyboardButton("Очистить список задач")
-    markup.add(btn1, btn2, btn3)
+    btn4 = types.KeyboardButton("Составить расписание")
+    markup.add(btn1, btn2, btn3, btn4)
     bot.send_message(message.chat.id, text="Теперь можно использовать кнопки для хз чего".format(message.from_user), reply_markup=markup)
     bot.register_next_step_handler(message, time_function)
 
@@ -119,7 +123,7 @@ def callback_worker(call):
 @bot.message_handler(content_types=['text'])
 def time_function(message):
     global count
-    if message.text == "Вывести мои задачи" or message.text == "Измнеить список задач" or message.text == "Очистить список задач":
+    if message.text == "Вывести мои задачи" or message.text == "Измнеить список задач" or message.text == "Очистить список задач" or message.text == "Составить расписание":
         buttons_func(message)
     elif count >= 1:
         bot.register_next_step_handler(message, tasks_function)
