@@ -2,7 +2,9 @@ from sqlite3 import Time
 import telebot
 from telebot import types
 import time
-
+from Task import Task
+from TimeTable import TimeTable
+ 
 bot = telebot.TeleBot("5796025327:AAGmNucofDgGzNLKwvdoOndVaufaIxX3vvY")
 
 count_button = 0
@@ -12,31 +14,6 @@ string_name_tasks = ""
 is_time = False
 list_name_tasks = []
 count = 0 # count для того чтобы один раз вводить время
-
-
-class Task:
-    def __init__(self, name_of_task, importance, urgency, duration):
-        self.name_of_task = name_of_task
-        self.importance = importance
-        self.urgency = urgency
-        self.duration = duration
-
-
-class TimeTable:
-    def __init__(self, start_time=None, finish_time=None, list_tasks=None):
-        self.start_time = start_time
-        self.finish_time = finish_time
-        self.list_tasks = list_tasks
-
-    def clean(self):
-        self.list_tasks = []
-
-    def delete_task(self, name_of_task):
-        self.list_tasks.remove(name_of_task)
-
-    def add_task(self, name_of_task, importance, urgency, duration):
-        task = Task(name_of_task, importance, urgency, duration)
-        self.list_tasks.append(task)
 
 
 time_table = TimeTable()
