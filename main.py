@@ -170,7 +170,7 @@ def time_function(message):
         if (semicolon == 1) and (colon == 2) and count == 0:
             semicolon = 0
             colon = 0
-            count += 1
+            
             global flag
             global count_button
             global list_tasks
@@ -189,6 +189,7 @@ def time_function(message):
                 is_time = True
                 print(time_table.start_time, time_table.finish_time, time_table.list_tasks)
                 bot.send_message(message.from_user.id, 'введите список задач в формате: название задачи срочность(от 1 до 10) (важность(от 1 до 10) продолжительность(в минутах) пример: поесть 10 8 15; ауджимания 10 10 90')
+                count += 1
             except ValueError:
                 bot.send_message(message.from_user.id, 'говно ввел')
 
