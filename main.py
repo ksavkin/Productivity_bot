@@ -42,7 +42,8 @@ def algorithm(message):
     if sum_durat + res_chill > int(time_table.finish_time.split(":")[0]) * 60 + int(time_table.finish_time.split(":")[1]) - (int(time_table.start_time.split(":")[0]) * 60 + int(time_table.start_time.split(":")[1])):
         bot.send_message(message.from_user.id, "Что-то ты переборщил, братанчик, время, уделенное на работу время меньше времени, которое будет потрачено на ворк")
     else:
-        time_table.list_tasks = sorted(list_tasks, key=lambda x: (x.urgency , x.importance))
+        time_table.list_tasks = sorted(list_tasks, key=lambda x: (int(x.importance) , int(x.urgency)))
+        time_table.list_tasks.reverse()
         string_name_tasks = ""
         for i in time_table.list_tasks:
             string_name_tasks = string_name_tasks + " " + str(i.name_of_task)
@@ -157,8 +158,8 @@ def tasks_function(message):
             for i in message_new:
                 sp = i.split(" ") # начинаем разбираться где название задачи/важность/срочность/длительность
                 name_of_task = sp[0]
-                urgency = sp[1]
-                importance = sp[2]
+                importance = sp[1]
+                urgency = sp[2]
                 duration = sp[3]
                 task = Task(name_of_task, importance, urgency, duration)
                 list_tasks.append(task)
@@ -167,8 +168,8 @@ def tasks_function(message):
         else:
             sp = message.text.split(" ")
             name_of_task = sp[0]
-            urgency = sp[1]
-            importance = sp[2]
+            importance = sp[1]
+            urgency = sp[2]
             duration = sp[3]
             task = Task(name_of_task, importance, urgency, duration)
             list_tasks.append(task)
