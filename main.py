@@ -1,8 +1,11 @@
 
+from site import removeduppaths
 from sqlite3 import Time
+from turtle import left, right
 import telebot
 from telebot import types
 import time
+import datetime
 from Task import Task
 from TimeTable import TimeTable
  
@@ -30,6 +33,78 @@ def fefefe(message):
     bot.send_message(message.from_user.id, 'не надо дядя')
 
 
+def count_time(present_time, i): #неприятная возня со временем(сделал функцию чтобы не засорять main функцию)
+    a = present_time.split(":")
+    a[1], a[0] = int(a[1]), int(a[0])
+    a[1] += int(i)
+    a[0] += a[1] // 60
+    if int(a[1]) % 60 < 10:
+        a[1] = "0" + str(int(a[1]) % 60)
+    if int(a[1]) > 60:
+        a[1] -= 60 * (a[1] // 60)
+    if int(a[1]) == 60:
+        a[1] = "00"
+    if int(a[1]) % 60 < 10:
+        a[1] = "0" + str(int(a[1]) % 60)
+    present_time = str(a[0]) + ":" + str(a[1])
+    return present_time
+
+
+def res_algorithm(message):
+
+    '''present_time = time_table.start_time
+
+    count = 0
+    pomidor = 25
+    for i in list_tasks:
+        pomidor -= int(i.duration)
+        if pomidor > 0:
+            bot.send_message(message.from_user.id, str(present_time) + " - " + i.name_of_task)
+            present_time = count_time(present_time, i)
+        else:
+            bot.send_message(message.from_user.id, str(present_time) + " - chill")
+            pomidor = 25'''
+    left_tasks = []
+
+    for i in time_table.list_tasks:
+        left_tasks.append(i)
+    present_time = time_table.start_time
+    tomato = 25
+    count = 0
+    i = 0
+    while i != len(left_tasks):
+        
+        if tomato <= 0:
+            if count != 3:
+                bot.send_message(message.from_user.id, str(present_time) + " - отдых")
+                tomato = 25
+                present_time = count_time(present_time, 5)
+                count += 1
+            else:
+                bot.send_message(message.from_user.id, str(present_time) + " - отдых")
+                tomato = 25
+                present_time = count_time(present_time, 25)
+                count = 0
+        else:
+
+            if int(left_tasks[i].duration) < tomato:
+                tomato -= int(left_tasks[i].duration)
+                bot.send_message(message.from_user.id, str(present_time) + " - " + left_tasks[i].name_of_task)
+                present_time = count_time(present_time, int(left_tasks[i].duration))
+                i += 1
+            elif int(left_tasks[i].duration) >= tomato:
+                bot.send_message(message.from_user.id, str(present_time) + " - " + left_tasks[i].name_of_task)
+                present_time = count_time(present_time, abs(tomato))
+
+                left_tasks[i].duration = int(left_tasks[i].duration) - abs(tomato)
+                tomato = 0
+                if int(left_tasks[i].duration) == 0:
+                    i += 1
+    bot.send_message(message.from_user.id, "Расписание составлено")
+
+
+
+
 def algorithm(message):
     sum_durat = 0
     for i in time_table.list_tasks:
@@ -42,14 +117,14 @@ def algorithm(message):
     if sum_durat + res_chill > int(time_table.finish_time.split(":")[0]) * 60 + int(time_table.finish_time.split(":")[1]) - (int(time_table.start_time.split(":")[0]) * 60 + int(time_table.start_time.split(":")[1])):
         bot.send_message(message.from_user.id, "Что-то ты переборщил, братанчик, время, уделенное на работу время меньше времени, которое будет потрачено на ворк")
     else:
-        time_table.list_tasks = sorted(list_tasks, key=lambda x: (int(x.importance) , int(x.urgency)))
+        time_table.list_tasks = sorted(time_table.list_tasks, key=lambda x: (int(x.importance) , int(x.urgency)))
         time_table.list_tasks.reverse()
         string_name_tasks = ""
         for i in time_table.list_tasks:
             string_name_tasks = string_name_tasks + " " + str(i.name_of_task)
         string_name_tasks = string_name_tasks[1:]
         bot.send_message(message.from_user.id, "отсортированные задачи: " + string_name_tasks)
-
+        res_algorithm(message)
 
 
 
@@ -90,7 +165,7 @@ def start(message):
     global is_time
     string_name_tasks = ""
     list_tasks = []
-
+    time_table.list_tasks = []
     chill_durat = 0
     if message.text == '/start':
         is_time = False
@@ -152,6 +227,7 @@ def tasks_function(message):
     elif message.text == "/start":
         start(message)
     else:
+        list_tasks = []
         if len(message.text.split("; ")) > 0:
             # тупая проверка присутствует ли больше 1 задачи + что это не кнопка
             message_new = message.text.split("; ")
@@ -163,7 +239,7 @@ def tasks_function(message):
                 duration = sp[3]
                 task = Task(name_of_task, importance, urgency, duration)
                 list_tasks.append(task)
-                time_table.list_tasks = list_tasks
+            time_table.list_tasks = list_tasks
 
         else:
             sp = message.text.split(" ")
