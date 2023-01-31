@@ -1,6 +1,5 @@
-
 from site import removeduppaths
-from sqlite3 import Time
+import sqlite3
 from turtle import left, right
 import telebot
 from telebot import types
@@ -8,7 +7,7 @@ import time
 import datetime
 from Task import Task
 from TimeTable import TimeTable
- 
+
 bot = telebot.TeleBot("5796025327:AAGmNucofDgGzNLKwvdoOndVaufaIxX3vvY")
 
 count_button = 0
@@ -19,9 +18,14 @@ string_name_tasks = ""
 is_time = False
 list_name_tasks = []
 count = 0 # count для того чтобы один раз вводить время
-
+time_flag = False
 
 time_table = TimeTable()
+
+
+tomorrow = datetime.date.today() + datetime.timedelta(days=1)
+tomorrow = tomorrow.strftime("%d-%m-%Y ")
+print(tomorrow)
 
 
 # защита от лохов
@@ -52,18 +56,6 @@ def count_time(present_time, i): #неприятная возня со врем�
 
 def res_algorithm(message):
 
-    '''present_time = time_table.start_time
-
-    count = 0
-    pomidor = 25
-    for i in list_tasks:
-        pomidor -= int(i.duration)
-        if pomidor > 0:
-            bot.send_message(message.from_user.id, str(present_time) + " - " + i.name_of_task)
-            present_time = count_time(present_time, i)
-        else:
-            bot.send_message(message.from_user.id, str(present_time) + " - chill")
-            pomidor = 25'''
     left_tasks = []
 
     for i in time_table.list_tasks:
@@ -73,15 +65,29 @@ def res_algorithm(message):
     count = 0
     i = 0
     while i != len(left_tasks):
-        
+
         if tomato <= 0:
             if count != 3:
-                bot.send_message(message.from_user.id, str(present_time) + " - отдых")
+                #bot.send_message(message.from_user.id, str(present_time) + " - отдых")
+
+                conn = sqlite3.connect('base.db')
+                cur = conn.cursor()
+                # format datetime: YYYY-MM-DD HH:MI
+                cur.execute("insert into scheduler (date, action, telegram_user_id) values (?, ?, ?);", (f'{tomorrow}' + str(present_time), ' - отдых', f'{int(str(message.from_user.id)[-5:])}'))
+                conn.commit()
+
                 tomato = 25
                 present_time = count_time(present_time, 5)
                 count += 1
             else:
-                bot.send_message(message.from_user.id, str(present_time) + " - отдых")
+                #bot.send_message(message.from_user.id, str(present_time) + " - отдых")
+
+                conn = sqlite3.connect('base.db')
+                cur = conn.cursor()
+                # format datetime: YYYY-MM-DD HH:MI
+                cur.execute("insert into scheduler (date, action, telegram_user_id) values (?, ?, ?);", (f'{tomorrow}' + str(present_time), ' - отдых', f'{int(str(message.from_user.id)[-5:])}'))
+                conn.commit()
+
                 tomato = 25
                 present_time = count_time(present_time, 25)
                 count = 0
@@ -89,19 +95,33 @@ def res_algorithm(message):
 
             if int(left_tasks[i].duration) < tomato:
                 tomato -= int(left_tasks[i].duration)
-                bot.send_message(message.from_user.id, str(present_time) + " - " + left_tasks[i].name_of_task)
+                #bot.send_message(message.from_user.id, str(present_time) + " - " + left_tasks[i].name_of_task)
+
+                conn = sqlite3.connect('base.db')
+                cur = conn.cursor()
+                # format datetime: YYYY-MM-DD HH:MI
+                cur.execute("insert into scheduler (date, action, telegram_user_id) values (?, ?, ?);", (f'{tomorrow}' + str(present_time), f'{left_tasks[i].name_of_task}', f'{int(str(message.from_user.id)[-5:])}'))
+                conn.commit()
+
                 present_time = count_time(present_time, int(left_tasks[i].duration))
                 i += 1
-            elif int(left_tasks[i].duration) >= tomato:
-                bot.send_message(message.from_user.id, str(present_time) + " - " + left_tasks[i].name_of_task)
-                present_time = count_time(present_time, abs(tomato))
 
+            elif int(left_tasks[i].duration) >= tomato:
+                #bot.send_message(message.from_user.id, str(present_time) + " - " + left_tasks[i].name_of_task)
+
+                conn = sqlite3.connect('base.db')
+                cur = conn.cursor()
+                # format datetime: YYYY-MM-DD HH:MI
+                cur.execute("insert into scheduler (date, action, telegram_user_id) values (?, ?, ?);", (f'{tomorrow}' + str(present_time), f'{left_tasks[i].name_of_task}', f'{int(str(message.from_user.id)[-5:])}'))
+                conn.commit()
+
+                present_time = count_time(present_time, abs(tomato))
                 left_tasks[i].duration = int(left_tasks[i].duration) - abs(tomato)
                 tomato = 0
                 if int(left_tasks[i].duration) == 0:
                     i += 1
     bot.send_message(message.from_user.id, "Расписание составлено")
-
+    timetable(message)
 
 
 
@@ -123,9 +143,18 @@ def algorithm(message):
         for i in time_table.list_tasks:
             string_name_tasks = string_name_tasks + " " + str(i.name_of_task)
         string_name_tasks = string_name_tasks[1:]
-        bot.send_message(message.from_user.id, "отсортированные задачи: " + string_name_tasks)
+        #bot.send_message(message.from_user.id, "отсортированные задачи: " + string_name_tasks)
         res_algorithm(message)
 
+
+def timetable(message):
+    con = sqlite3.connect('base.db')
+    cur = con.cursor()
+    result = ''
+    a = cur.execute(f'''SELECT date FROM scheduler WHERE telegram_user_id = "{int(str(message.from_user.id)[-5:])}"''').fetchall()
+    b = cur.execute(f'''SELECT action FROM scheduler WHERE telegram_user_id = "{int(str(message.from_user.id)[-5:])}"''').fetchall()
+    for i in range(len(a)):
+        bot.send_message(message.from_user.id, a[i][0] + ' ' + b[i][0])
 
 
 def buttons_func(message):
@@ -138,20 +167,19 @@ def buttons_func(message):
             bot.send_message(message.from_user.id, "У вас нет задач")
         else:
             bot.send_message(message.from_user.id, "задачи: " + string_name_tasks)
-    elif message.text == "Изменить список задач":
-        bot.send_message(message.from_user.id, "функция находится в разработке")
-    elif message.text == "Очистить список задач":
-        time_table.list_tasks = []
-        string_name_tasks = ""
-        bot.send_message(message.from_user.id, "готово")
-        bot.send_message(message.from_user.id, "на данный момент у вас нет задач")
+    # elif message.text == "Изменить список задач":
+    #     bot.send_message(message.from_user.id, "функция находится в разработке")
+    # elif message.text == "Очистить список задач":
+    #     time_table.list_tasks = []
+    #     string_name_tasks = ""
+    #     bot.send_message(message.from_user.id, "готово")
+    #     bot.send_message(message.from_user.id, "на данный момент у вас нет задач")
     else: # только если всего 4 кнопки иначе elif. получается else выполняется при нажатии кнопки "составить расписание"
         #bot.send_message(message.from_user.id, "функция находится в разработке")
         if len(string_name_tasks.split()) == 0:
             bot.send_message(message.from_user.id, "лол сортировать то нечего :)")
         else:
             algorithm(message)
-
 
 
 # начальная фразочка
@@ -171,6 +199,13 @@ def start(message):
         is_time = False
         count = 0
         count_button = 0
+
+        #очистка бд
+        con = sqlite3.connect('base.db')
+        cur = con.cursor()
+        cur.execute(f"""DELETE from scheduler WHERE telegram_user_id >= {int(str(message.from_user.id)[-5:])}""").fetchall()
+        con.commit()
+
         bot.send_message(message.from_user.id, "Привет, я бот, который поможет тебе сделать твой день продуктивным")
         # клавиатура
         keyboard = types.InlineKeyboardMarkup()
@@ -189,7 +224,7 @@ def start(message):
         buttons_func(message)
     # создание кнопок
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    
+
     btn1 = types.KeyboardButton("Вывести мои задачи")
     btn2 = types.KeyboardButton("Изменить список задач")
     btn3 = types.KeyboardButton("Очистить список задач")
@@ -206,6 +241,7 @@ def callback_worker(call):
     global count_button
     # call.data это callback_data, которую мы указали при объявлении кнопки
     if call.data == "yes" and count_button == 0:
+
         count_button += 1
         bot.send_message(call.message.chat.id, 'Введите время начала и конца рабочего дня'
                                                'пример: 9:00; 20:00')
@@ -215,6 +251,7 @@ def callback_worker(call):
         count_button += 1
         bot.send_message(call.message.chat.id, text='Тогда до скорой встречи',
                          reply_markup=types.ReplyKeyboardRemove(), parse_mode='Markdown')
+
 
 def tasks_function(message):
     global list_tasks
@@ -237,8 +274,11 @@ def tasks_function(message):
                 importance = sp[1]
                 urgency = sp[2]
                 duration = sp[3]
-                task = Task(name_of_task, importance, urgency, duration)
-                list_tasks.append(task)
+                if int(importance) > 10 or int(urgency) > 10:
+                    bot.send_message(message.from_user.id, "неправильный формат отправки данных")
+                else:
+                    task = Task(name_of_task, importance, urgency, duration)
+                    list_tasks.append(task)
             time_table.list_tasks = list_tasks
 
         else:
@@ -247,8 +287,11 @@ def tasks_function(message):
             importance = sp[1]
             urgency = sp[2]
             duration = sp[3]
-            task = Task(name_of_task, importance, urgency, duration)
-            list_tasks.append(task)
+            if int(importance) > 10 or int(urgency) > 10:
+                bot.send_message(message.from_user.id, "неправильный формат отправки данных")
+            else:
+                task = Task(name_of_task, importance, urgency, duration)
+                list_tasks.append(task)
             time_table.list_tasks = list_tasks
 
         # код ниже - вывод задач, которые ввел пользователь
@@ -259,13 +302,13 @@ def tasks_function(message):
         for i in list_name_tasks:
             string_name_tasks = string_name_tasks + " " + str(i)
         string_name_tasks = string_name_tasks[1:]
-        bot.send_message(message.from_user.id, "вы добавили следующие задачи: " + string_name_tasks)
-
+        bot.send_message(message.from_user.id, 'отлично! нажмите на кнопку "составить расписание"')
 
 
 @bot.message_handler(content_types=['text'])
 def time_function(message):
     global count
+    global flag
     if message.text == "Вывести мои задачи" or message.text == "Измнеить список задач" or message.text == "Очистить список задач" or message.text == "Составить расписание":
         buttons_func(message)
     elif count >= 1:
@@ -282,11 +325,10 @@ def time_function(message):
                 semicolon += 1
             if elem == ':':
                 colon += 1
-        if (semicolon == 1) and (colon == 2) and count == 0:
+        if (semicolon == 1) and (colon == 2) and count == 0 and flag == True:
             semicolon = 0
             colon = 0
-            
-            global flag
+
             global is_time
             global count_button
             global list_tasks
@@ -311,7 +353,6 @@ def time_function(message):
 
         else:
             bot.send_message(message.from_user.id, 'я вас не понимаю')
-
 
 
 bot.polling()
